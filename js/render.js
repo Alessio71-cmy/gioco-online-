@@ -63,6 +63,12 @@ const Renderer = (() => {
         const v = (h % 256) / 255;
         c.fillStyle = `rgba(${24 + v * 20 | 0},${42 + v * 24 | 0},${62 + v * 28 | 0},0.7)`;
         c.fillRect(wx(gx), wy(gy), g2, g2);
+        // bevel: bordo alto chiaro, bordo basso in ombra → pannelli in rilievo
+        c.strokeStyle = 'rgba(190,235,255,0.13)';
+        c.lineWidth = 2;
+        c.beginPath(); c.moveTo(wx(gx) + 2, wy(gy) + 2); c.lineTo(wx(gx + g2) - 2, wy(gy) + 2); c.stroke();
+        c.strokeStyle = 'rgba(0,0,0,0.35)';
+        c.beginPath(); c.moveTo(wx(gx) + 2, wy(gy + g2) - 2); c.lineTo(wx(gx + g2) - 2, wy(gy + g2) - 2); c.stroke();
 
         // decal: prese d'aria, frecce, strisce di pericolo, graffi
         const t = (h >>> 4) % 8;
@@ -131,24 +137,46 @@ const Renderer = (() => {
       }
     }
 
-    // pareti pseudo-3D dentro la luce: corpo, faccia superiore rialzata, neon alla base
-    forEachWallNear(px, py, HFS + 40, w => {
+    // pareti 3D dentro la luce: estrusione PROSPETTICA — le facce superiori
+    // si spostano lontano dall'osservatore, quindi i muri "si alzano"
+    // e ruotano leggermente mentre cammini, come una vera altezza.
+    forEachWallNear(px, py, HFS + 60, w => {
       const x = wx(w.x), y = wy(w.y);
-      c.fillStyle = '#0d1a29';                       // fianco in ombra
-      c.fillRect(x, y, w.w, w.h);
-      c.fillStyle = 'rgba(70,225,255,0.45)';         // striscia luminosa alla base
-      c.fillRect(x - 2, y + w.h, w.w + 4, 3.5);
-      c.fillStyle = '#1e3d5e';                       // faccia superiore (estrusa)
-      c.fillRect(x, y - 12, w.w, w.h);
-      c.strokeStyle = 'rgba(125,205,250,0.7)';
+      const wcx = w.x + w.w / 2, wcy = w.y + w.h / 2;
+      // vettore di fuga prospettica rispetto all'osservatore
+      const kx = clamp((wcx - px) * 0.075, -34, 34);
+      const ky = clamp((wcy - py) * 0.075, -34, 34) - 9;
+
+      // ombra portata a terra (occlusione ambientale)
+      c.fillStyle = 'rgba(0,4,10,0.55)';
+      c.fillRect(x - 6, y - 4, w.w + 12, w.h + 12);
+
+      // neon alla base, tutto attorno
+      c.strokeStyle = 'rgba(70,225,255,0.4)';
+      c.lineWidth = 2.5;
+      c.strokeRect(x - 1.5, y - 1.5, w.w + 3, w.h + 3);
+
+      // fianchi: smear dalla base alla sommità, sempre più chiari verso l'alto
+      const steps = 5;
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        c.fillStyle = `rgb(${10 + 22 * t | 0},${20 + 34 * t | 0},${32 + 50 * t | 0})`;
+        c.fillRect(x + kx * t, y + ky * t, w.w, w.h);
+      }
+
+      // faccia superiore
+      const tx = x + kx, ty = y + ky;
+      c.fillStyle = '#28496e';
+      c.fillRect(tx, ty, w.w, w.h);
+      c.strokeStyle = 'rgba(140,215,255,0.75)';
       c.lineWidth = 1.6;
-      c.strokeRect(x, y - 12, w.w, w.h);
+      c.strokeRect(tx, ty, w.w, w.h);
       // pannellatura sulla faccia superiore
-      c.strokeStyle = 'rgba(70,140,190,0.3)';
+      c.strokeStyle = 'rgba(80,150,200,0.35)';
       c.lineWidth = 1;
       c.beginPath();
-      if (w.w > w.h) for (let sx = w.x + 60; sx < w.x + w.w; sx += 60) { c.moveTo(wx(sx), y - 12); c.lineTo(wx(sx), y - 12 + w.h); }
-      else for (let sy = w.y + 60; sy < w.y + w.h; sy += 60) { c.moveTo(x, wy(sy) - 12); c.lineTo(x + w.w, wy(sy) - 12); }
+      if (w.w > w.h) for (let sx = 60; sx < w.w; sx += 60) { c.moveTo(tx + sx, ty); c.lineTo(tx + sx, ty + w.h); }
+      else for (let sy = 60; sy < w.h; sy += 60) { c.moveTo(tx, ty + sy); c.lineTo(tx + w.w, ty + sy); }
       c.stroke();
     });
 
@@ -210,6 +238,24 @@ const Renderer = (() => {
     ctx.strokeStyle = hexA(skin.rim, 0.85 * alpha);
     ctx.lineWidth = skin.id === 'void' ? 2.2 : 1.4;
     ctx.stroke();
+
+    // volume 3D: ombreggiatura e speculare in coordinate MONDO
+    // (contro-ruotati: la luce non gira insieme al personaggio)
+    ctx.save();
+    blobPath(ctx, r, t, seed, droop);
+    ctx.clip();
+    ctx.rotate(-(opts.rot || 0));
+    const shade = ctx.createLinearGradient(0, -r * 1.25, 0, r * 1.25);
+    shade.addColorStop(0, `rgba(235,250,255,${0.14 * alpha})`);
+    shade.addColorStop(0.45, 'rgba(0,0,0,0)');
+    shade.addColorStop(1, `rgba(0,6,18,${0.4 * alpha})`);
+    ctx.fillStyle = shade;
+    ctx.fillRect(-r * 2, -r * 2, r * 4, r * 4);
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.46, r * 0.34, r * 0.15, -0.5, 0, TAU);
+    ctx.fillStyle = `rgba(255,255,255,${(skin.id === 'void' ? 0.12 : 0.3) * alpha})`;
+    ctx.fill();
+    ctx.restore();
 
     // dettagli skin
     if (skin.id === 'void') {
@@ -276,6 +322,20 @@ const Renderer = (() => {
     const now = Game.now;
     ctx.save();
     ctx.translate(b.x, b.y);
+
+    // ombra di contatto: il blob poggia davvero sul pavimento
+    ctx.save();
+    ctx.translate(b.r * 0.1, b.r * 0.45);
+    ctx.scale(1, 0.38);
+    const sh = ctx.createRadialGradient(0, 0, 0, 0, 0, b.r * 1.2);
+    sh.addColorStop(0, `rgba(0,3,10,${0.55 * alpha})`);
+    sh.addColorStop(1, 'rgba(0,3,10,0)');
+    ctx.fillStyle = sh;
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r * 1.2, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
     ctx.rotate(b.dir);
 
     // affondo dell'attacco + compressione quando colpisce
@@ -293,7 +353,7 @@ const Renderer = (() => {
     }
     ctx.scale(sx, sy);
 
-    drawBlobShape(ctx, b.skin, b.r, now, b.wobSeed, alpha);
+    drawBlobShape(ctx, b.skin, b.r, now, b.wobSeed, alpha, { rot: b.dir });
 
     // flash quando viene colpito
     const ht = (now - b.hitT) / 0.25;
@@ -563,20 +623,6 @@ const Renderer = (() => {
       ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
       drawBlob(ctx, b, a);
-    }
-
-    // anello hp attorno al proprio blob
-    if (me && me.alive) {
-      const frac = clamp(me.hp / me.maxHp, 0, 1);
-      ctx.strokeStyle = `rgba(120,220,255,0.25)`;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(me.x, me.y, me.r + 12, 0, TAU);
-      ctx.stroke();
-      ctx.strokeStyle = frac > 0.4 ? 'rgba(120,255,220,0.75)' : 'rgba(255,110,120,0.85)';
-      ctx.beginPath();
-      ctx.arc(me.x, me.y, me.r + 12, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
-      ctx.stroke();
     }
 
     // ---- overlay in spazio schermo ----

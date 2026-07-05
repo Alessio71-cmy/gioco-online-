@@ -39,7 +39,7 @@ class Blob {
 
   get power() { return Math.min(1, Math.pow(this.xp / CFG.XP_MAX, 0.6)); }
   get tier() { return tierOf(this.power); }
-  get r() { return 20 + 22 * this.power; }
+  get r() { return 30 + 26 * this.power; }
   get maxHp() { return 100 + 90 * this.power; }
   get speed() { return CFG.BASE_SPEED - 20 * this.power; }
   get dmg() { return 46 + 34 * this.power; }

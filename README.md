@@ -88,13 +88,13 @@ Il piano seguito per costruire il gioco, pensato per essere **veloce, ottimizzat
 
 ### Fase 8 — UI / UX
 32. Schermata iniziale: nome, 4 skin animate (**Neon / Glitch / Slime / Void**), START; preferenze salvate in `localStorage`.
-33. HUD: kill counter, classifica top-8, barre ECO/POWER color-tier, toast per kill e potenziamenti, etichetta "settore 7806".
+33. HUD essenziale: kill counter + vita in alto a sinistra, classifica top-8, un solo indicatore in basso — la barra ECO spessa il cui colore comunica l'Eco Power — toast per kill e potenziamenti, etichetta "settore 7806".
 34. Schermata morte: chi ti ha assorbito, kill/energia/tempo, RIENTRA o MENU.
 35. Dietro il menu la simulazione gira già in modalità spettatore: il mondo è vivo prima ancora di entrare.
 
 ### Fase 9 — Estetica moderna e ottimizzazione
 36. Buio stratificato: vignetta, polvere in parallasse a 2 livelli, e una **bolla di luce piena e sfumata** che parte dal corpo del blob — dentro vedi davvero l'ambiente (pannelli del pavimento con decal, prese d'aria, frecce, griglia, pareti pseudo-3D con neon alla base, strisce guida luminose), fuori resta il buio da interrogare con l'eco.
-37. Glow additivo (`lighter`) per eco, energia, esplosioni; blob "wobble" con occhio unico, squash & stretch su attacco e colpo, dettagli per skin (glitch-slice, goccioline, stelle interne).
+37. Glow additivo (`lighter`) per eco, energia, esplosioni; blob "wobble" 3D con occhio unico, ombra di contatto sul pavimento, speculare e ombreggiatura in coordinate mondo, squash & stretch su attacco e colpo, dettagli per skin (glitch-slice, goccioline, stelle interne); pareti con estrusione prospettica che si inclina rispetto all'osservatore.
 38. Ottimizzazioni: culling a viewport su tutto, cap (reveal 1600, particelle 700, frammenti 460), un solo canvas di gioco + minimappa separata, nessuna allocazione calda nei raycast (stamp invece di Set).
 39. Verifica: 13 bot + player, echi multipli e combattimenti → **~61 FPS stabili** in headless Chromium, zero errori JS.
 

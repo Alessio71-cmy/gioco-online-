@@ -18,8 +18,8 @@ const UI = (() => {
       kills: document.getElementById('kills'),
       lb: document.getElementById('lb'),
       batBar: document.getElementById('batBar'),
-      powerBar: document.getElementById('powerBar'),
-      powerLabel: document.getElementById('powerLabel'),
+      ecoLabel: document.getElementById('ecoLabel'),
+      hpBar: document.getElementById('hpBar'),
       deathBy: document.getElementById('deathBy'),
       deathStats: document.getElementById('deathStats'),
       respawn: document.getElementById('respawnBtn'),
@@ -122,13 +122,14 @@ const UI = (() => {
     if (!me) return;
 
     els.kills.textContent = `☠ ${me.kills}`;
+    // unico indicatore in basso: l'eco (il colore comunica l'Eco Power)
     els.batBar.style.width = `${me.battery}%`;
-    els.batBar.style.background = me.battery < CFG.PING_COST ? '#ff5f7a' : '#4df5c8';
-    const p = me.power;
-    els.powerBar.style.width = `${Math.max(3, p * 100)}%`;
-    els.powerBar.style.background = TIER_COLORS[me.tier];
-    els.powerLabel.textContent = TIER_NAMES[me.tier];
-    els.powerLabel.style.color = TIER_COLORS[me.tier];
+    els.batBar.style.background = me.battery < CFG.PING_COST ? '#ff5f7a' : TIER_COLORS[me.tier];
+    els.ecoLabel.style.color = TIER_COLORS[me.tier];
+    // vita in alto a sinistra
+    const hpFrac = clamp(me.hp / me.maxHp, 0, 1);
+    els.hpBar.style.width = `${hpFrac * 100}%`;
+    els.hpBar.style.background = hpFrac > 0.4 ? '#4df5c8' : '#ff5f7a';
 
     lbTimer -= dt;
     if (lbTimer <= 0) {
