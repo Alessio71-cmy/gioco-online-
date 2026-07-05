@@ -279,17 +279,6 @@ const Renderer = (() => {
       ctx.fill();
       ctx.restore();
     }
-    if (skin.id === 'slime') {
-      // goccioline satelliti
-      for (let i = 0; i < 3; i++) {
-        const a = seed + i * 2.1 + t * 0.8;
-        const dd = r * (1.3 + 0.25 * Math.sin(t * 1.9 + i));
-        ctx.beginPath();
-        ctx.arc(Math.cos(a) * dd, Math.abs(Math.sin(a)) * dd * 0.6 + r * 0.5, r * 0.12, 0, TAU);
-        ctx.fillStyle = hexA(skin.body, 0.7 * alpha);
-        ctx.fill();
-      }
-    }
 
     // occhio unico (guarda avanti = +x)
     if (!opts.noEye) {
