@@ -33,7 +33,8 @@ const CFG = {
   PART_CAP: 700,
   REVEAL_CAP: 1600,
 
-  NEAR_LIGHT: 190,    // raggio in cui i blob si vedono "a occhio nudo"
+  NEAR_LIGHT: 240,    // raggio in cui i blob si vedono "a occhio nudo"
+  LIGHT_R: 330,       // raggio della bolla di luce attorno al player
   MM_RANGE: 2000,     // portata minimappa (px mondo)
 };
 

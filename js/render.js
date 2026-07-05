@@ -27,83 +27,143 @@ const Renderer = (() => {
     return `rgba(${r},${g},${b},${a})`;
   }
 
-  // ---- pavimento: griglia tecnica visibile solo vicino all'osservatore ----
-  function drawFloor(ctx, px, py) {
-    const S = 620, HFS = S / 2;
-    if (!floorCv) {
+  // hash deterministico per pannello → dettagli stabili del pavimento
+  function panelHash(ix, iy) {
+    let h = ix * 374761393 + iy * 668265263;
+    h = (h ^ (h >>> 13)) * 1274126177;
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+
+  // ---- bolla di luce: attorno al player l'ambiente si vede DAVVERO ----
+  // Pavimento, pannelli, decal e pareti pseudo-3D disegnati in un offscreen
+  // world-aligned, poi mascherati con un gradiente radiale pieno e sfumato.
+  function drawLightBubble(ctx, px, py) {
+    const S = CFG.LIGHT_R * 2 + 20, HFS = S / 2;
+    if (!floorCv || floorCv.width !== S) {
       floorCv = document.createElement('canvas');
       floorCv.width = floorCv.height = S;
       floorCtx = floorCv.getContext('2d');
     }
     const c = floorCtx;
+    const wx = x => x - px + HFS, wy = y => y - py + HFS;
     c.clearRect(0, 0, S, S);
-    c.save();
-    // linee allineate al mondo
+
+    // base metallica del pavimento
+    c.fillStyle = '#13233a';
+    c.fillRect(0, 0, S, S);
+
     const g1 = 120, g2 = 600;
-    c.strokeStyle = 'rgba(60,130,180,0.5)';
-    c.lineWidth = 1;
-    c.beginPath();
-    for (let x = Math.floor((px - HFS) / g1) * g1; x <= px + HFS; x += g1) {
-      c.moveTo(x - px + HFS, 0); c.lineTo(x - px + HFS, S);
-    }
-    for (let y = Math.floor((py - HFS) / g1) * g1; y <= py + HFS; y += g1) {
-      c.moveTo(0, y - py + HFS); c.lineTo(S, y - py + HFS);
-    }
-    c.stroke();
-    // giunzioni dei pannelli
-    c.strokeStyle = 'rgba(80,170,220,0.7)';
-    c.lineWidth = 2.5;
-    c.beginPath();
-    for (let x = Math.floor((px - HFS) / g2) * g2; x <= px + HFS; x += g2) {
-      c.moveTo(x - px + HFS, 0); c.lineTo(x - px + HFS, S);
-    }
-    for (let y = Math.floor((py - HFS) / g2) * g2; y <= py + HFS; y += g2) {
-      c.moveTo(0, y - py + HFS); c.lineTo(S, y - py + HFS);
-    }
-    c.stroke();
-    // bulloni agli incroci dei pannelli
-    c.fillStyle = 'rgba(120,200,240,0.8)';
-    for (let x = Math.floor((px - HFS) / g2) * g2; x <= px + HFS; x += g2) {
-      for (let y = Math.floor((py - HFS) / g2) * g2; y <= py + HFS; y += g2) {
-        c.beginPath();
-        c.arc(x - px + HFS, y - py + HFS, 3, 0, TAU);
-        c.fill();
+    const px0 = Math.floor((px - HFS) / g2) * g2;
+    const py0 = Math.floor((py - HFS) / g2) * g2;
+
+    // pannelli 600x600 con tinta variata + decal deterministici
+    for (let gx = px0; gx <= px + HFS; gx += g2) {
+      for (let gy = py0; gy <= py + HFS; gy += g2) {
+        const h = panelHash(gx / g2, gy / g2);
+        const v = (h % 256) / 255;
+        c.fillStyle = `rgba(${24 + v * 20 | 0},${42 + v * 24 | 0},${62 + v * 28 | 0},0.7)`;
+        c.fillRect(wx(gx), wy(gy), g2, g2);
+
+        // decal: prese d'aria, frecce, strisce di pericolo, graffi
+        const t = (h >>> 4) % 8;
+        const dx = wx(gx + 90 + ((h >>> 8) % 400));
+        const dy = wy(gy + 90 + ((h >>> 16) % 400));
+        c.strokeStyle = 'rgba(130,200,240,0.65)';
+        c.fillStyle = 'rgba(130,200,240,0.5)';
+        c.lineWidth = 2;
+        if (t === 0) {          // presa d'aria circolare
+          c.beginPath(); c.arc(dx, dy, 26, 0, TAU); c.stroke();
+          c.beginPath();
+          for (let i = -1; i <= 1; i++) { c.moveTo(dx - 18, dy + i * 9); c.lineTo(dx + 18, dy + i * 9); }
+          c.stroke();
+        } else if (t === 1) {   // doppia freccia di corridoio
+          c.beginPath();
+          for (let i = 0; i < 2; i++) {
+            c.moveTo(dx - 12 + i * 22, dy - 12); c.lineTo(dx + 2 + i * 22, dy); c.lineTo(dx - 12 + i * 22, dy + 12);
+          }
+          c.stroke();
+        } else if (t === 2) {   // strisce di pericolo
+          c.save();
+          c.beginPath(); c.rect(dx - 34, dy - 12, 68, 24); c.clip();
+          c.strokeStyle = 'rgba(230,190,80,0.4)';
+          c.lineWidth = 6;
+          c.beginPath();
+          for (let i = -5; i < 6; i++) { c.moveTo(dx + i * 14 - 12, dy + 14); c.lineTo(dx + i * 14 + 12, dy - 14); }
+          c.stroke();
+          c.restore();
+        } else if (t === 3) {   // botola quadrata
+          c.strokeRect(dx - 22, dy - 22, 44, 44);
+          c.strokeRect(dx - 14, dy - 14, 28, 28);
+        } else if (t === 4) {   // graffi
+          c.strokeStyle = 'rgba(140,170,190,0.25)';
+          c.beginPath();
+          for (let i = 0; i < 3; i++) {
+            const a = ((h >>> (i * 3)) % 100) / 100 * TAU, l = 14 + (h >>> (i * 4)) % 22;
+            c.moveTo(dx + i * 9, dy + i * 7);
+            c.lineTo(dx + i * 9 + Math.cos(a) * l, dy + i * 7 + Math.sin(a) * l);
+          }
+          c.stroke();
+        } else if (t === 5) {   // codice settore
+          c.fillRect(dx, dy, 30, 5); c.fillRect(dx, dy + 9, 18, 5); c.fillRect(dx + 22, dy + 9, 8, 5);
+        }
       }
     }
-    // maschera radiale: si vede solo vicino
-    const grad = c.createRadialGradient(HFS, HFS, 30, HFS, HFS, HFS - 20);
+
+    // griglia fine
+    c.strokeStyle = 'rgba(80,155,205,0.4)';
+    c.lineWidth = 1;
+    c.beginPath();
+    for (let x = Math.floor((px - HFS) / g1) * g1; x <= px + HFS; x += g1) { c.moveTo(wx(x), 0); c.lineTo(wx(x), S); }
+    for (let y = Math.floor((py - HFS) / g1) * g1; y <= py + HFS; y += g1) { c.moveTo(0, wy(y)); c.lineTo(S, wy(y)); }
+    c.stroke();
+
+    // giunzioni dei pannelli + bulloni
+    c.strokeStyle = 'rgba(105,190,240,0.6)';
+    c.lineWidth = 3;
+    c.beginPath();
+    for (let x = px0; x <= px + HFS; x += g2) { c.moveTo(wx(x), 0); c.lineTo(wx(x), S); }
+    for (let y = py0; y <= py + HFS; y += g2) { c.moveTo(0, wy(y)); c.lineTo(S, wy(y)); }
+    c.stroke();
+    c.fillStyle = 'rgba(140,210,245,0.7)';
+    for (let x = px0; x <= px + HFS; x += g2) {
+      for (let y = py0; y <= py + HFS; y += g2) {
+        c.beginPath(); c.arc(wx(x), wy(y), 3.2, 0, TAU); c.fill();
+      }
+    }
+
+    // pareti pseudo-3D dentro la luce: corpo, faccia superiore rialzata, neon alla base
+    forEachWallNear(px, py, HFS + 40, w => {
+      const x = wx(w.x), y = wy(w.y);
+      c.fillStyle = '#0d1a29';                       // fianco in ombra
+      c.fillRect(x, y, w.w, w.h);
+      c.fillStyle = 'rgba(70,225,255,0.45)';         // striscia luminosa alla base
+      c.fillRect(x - 2, y + w.h, w.w + 4, 3.5);
+      c.fillStyle = '#1e3d5e';                       // faccia superiore (estrusa)
+      c.fillRect(x, y - 12, w.w, w.h);
+      c.strokeStyle = 'rgba(125,205,250,0.7)';
+      c.lineWidth = 1.6;
+      c.strokeRect(x, y - 12, w.w, w.h);
+      // pannellatura sulla faccia superiore
+      c.strokeStyle = 'rgba(70,140,190,0.3)';
+      c.lineWidth = 1;
+      c.beginPath();
+      if (w.w > w.h) for (let sx = w.x + 60; sx < w.x + w.w; sx += 60) { c.moveTo(wx(sx), y - 12); c.lineTo(wx(sx), y - 12 + w.h); }
+      else for (let sy = w.y + 60; sy < w.y + w.h; sy += 60) { c.moveTo(x, wy(sy) - 12); c.lineTo(x + w.w, wy(sy) - 12); }
+      c.stroke();
+    });
+
+    // maschera radiale: luce piena al centro, sfuma fino al buio
+    const grad = c.createRadialGradient(HFS, HFS, 26, HFS, HFS, HFS - 8);
     grad.addColorStop(0, 'rgba(0,0,0,1)');
-    grad.addColorStop(0.55, 'rgba(0,0,0,0.5)');
+    grad.addColorStop(0.45, 'rgba(0,0,0,0.88)');
+    grad.addColorStop(0.75, 'rgba(0,0,0,0.45)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     c.globalCompositeOperation = 'destination-in';
     c.fillStyle = grad;
     c.fillRect(0, 0, S, S);
-    c.restore();
+    c.globalCompositeOperation = 'source-over';
 
-    ctx.globalAlpha = 0.16;
     ctx.drawImage(floorCv, px - HFS, py - HFS);
-    ctx.globalAlpha = 1;
-  }
-
-  // ---- pareti vicine: sagome appena percepibili con estrusione pseudo-3D ----
-  function drawNearWalls(ctx, px, py) {
-    forEachWallNear(px, py, 300, w => {
-      const cx = clamp(px, w.x, w.x + w.w), cy = clamp(py, w.y, w.y + w.h);
-      const d = dist(px, py, cx, cy);
-      const a = clamp(1 - (d - 20) / 250, 0, 1) * 0.32;
-      if (a <= 0.01) return;
-      // faccia superiore rialzata: illusione di altezza
-      ctx.fillStyle = `rgba(16,30,46,${a})`;
-      ctx.fillRect(w.x, w.y - 9, w.w, w.h);
-      ctx.strokeStyle = `rgba(70,140,190,${a})`;
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(w.x, w.y - 9, w.w, w.h);
-      ctx.strokeStyle = `rgba(40,80,120,${a * 0.8})`;
-      ctx.beginPath();
-      ctx.moveTo(w.x, w.y + w.h);
-      ctx.lineTo(w.x + w.w, w.y + w.h);
-      ctx.stroke();
-    });
   }
 
   // ---- corpo del blob (condiviso con le anteprime del menu) ----
@@ -326,12 +386,45 @@ const Renderer = (() => {
     const ox = me ? me.x : cam.x;
     const oy = me ? me.y : cam.y;
 
-    // pavimento e pareti vicino all'osservatore
-    drawFloor(ctx, ox, oy);
-    drawNearWalls(ctx, ox, oy);
+    // bolla di luce: pavimento + pareti visibili attorno all'osservatore
+    drawLightBubble(ctx, ox, oy);
 
     // ---- luce additiva da qui in poi ----
     ctx.globalCompositeOperation = 'lighter';
+
+    // alone pieno e sfumato che parte dal corpo del blob
+    {
+      const skin = me ? me.skin : SKINS[0];
+      const lr = CFG.LIGHT_R;
+      const lg = ctx.createRadialGradient(ox, oy, 8, ox, oy, lr);
+      lg.addColorStop(0, hexA(skin.glow, 0.2));
+      lg.addColorStop(0.35, 'rgba(135,190,225,0.09)');
+      lg.addColorStop(1, 'rgba(135,190,225,0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.arc(ox, oy, lr, 0, TAU);
+      ctx.fill();
+    }
+
+    // strisce guida luminose sul pavimento (si vedono anche oltre la bolla)
+    for (const s of Game.world.strips) {
+      const d = dist(s.x, s.y, ox, oy);
+      if (d > 720 || !inView(s.x, s.y, 80)) continue;
+      const a = clamp(1 - d / 720, 0, 1) * (0.4 + 0.18 * Math.sin(now * 2.2 + s.phase));
+      const col = s.pink ? '255,110,220' : '80,225,255';
+      const hl = s.horiz ? s.len / 2 : 0, vl = s.horiz ? 0 : s.len / 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = `rgba(${col},${a * 0.22})`;
+      ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.moveTo(s.x - hl, s.y - vl);
+      ctx.lineTo(s.x + hl, s.y + vl);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${col},${a})`;
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
 
     // energia ambientale
     for (const m of Game.motes) {

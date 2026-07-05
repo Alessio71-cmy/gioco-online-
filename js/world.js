@@ -121,7 +121,19 @@ function generateWorld(seed) {
       }
   });
 
-  Game.world = { W, H, walls, grid, cols, rows };
+  Game.world = { W, H, walls, grid, cols, rows, strips: [] };
+
+  // strisce guida luminose sul pavimento (ambientazione visibile nel buio)
+  for (let k = 0; k < 70; k++) {
+    const p = randomOpenPos(34);
+    Game.world.strips.push({
+      x: p.x, y: p.y,
+      horiz: rng() < 0.5,
+      len: 70 + rng() * 70,
+      pink: rng() > 0.78,
+      phase: rng() * TAU,
+    });
+  }
 }
 
 function forEachWallNear(x, y, r, cb) {

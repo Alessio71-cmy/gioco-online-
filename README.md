@@ -93,7 +93,7 @@ Il piano seguito per costruire il gioco, pensato per essere **veloce, ottimizzat
 35. Dietro il menu la simulazione gira già in modalità spettatore: il mondo è vivo prima ancora di entrare.
 
 ### Fase 9 — Estetica moderna e ottimizzazione
-36. Buio stratificato: vignetta, polvere in parallasse a 2 livelli, pavimento tecnico visibile solo intorno a te (canvas offscreen + maschera radiale), pareti vicine con estrusione pseudo-3D.
+36. Buio stratificato: vignetta, polvere in parallasse a 2 livelli, e una **bolla di luce piena e sfumata** che parte dal corpo del blob — dentro vedi davvero l'ambiente (pannelli del pavimento con decal, prese d'aria, frecce, griglia, pareti pseudo-3D con neon alla base, strisce guida luminose), fuori resta il buio da interrogare con l'eco.
 37. Glow additivo (`lighter`) per eco, energia, esplosioni; blob "wobble" con occhio unico, squash & stretch su attacco e colpo, dettagli per skin (glitch-slice, goccioline, stelle interne).
 38. Ottimizzazioni: culling a viewport su tutto, cap (reveal 1600, particelle 700, frammenti 460), un solo canvas di gioco + minimappa separata, nessuna allocazione calda nei raycast (stamp invece di Set).
 39. Verifica: 13 bot + player, echi multipli e combattimenti → **~61 FPS stabili** in headless Chromium, zero errori JS.
