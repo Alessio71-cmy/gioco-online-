@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ECO — un .io nel buio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='55' r='30' fill='%234df5c8'/%3E%3Ccircle cx='58' cy='50' r='12' fill='%23f2fbff'/%3E%3Ccircle cx='61' cy='50' r='6' fill='%23101623'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- HUD in partita -->
+<div id="hud" class="hidden">
+  <div id="topleft">
+    <div id="kills">☠ 0</div>
+  </div>
+
+  <div id="leaderboard">
+    <h3>CLASSIFICA</h3>
+    <ol id="lb"></ol>
+  </div>
+
+  <div id="minimapWrap">
+    <canvas id="minimap" width="200" height="200"></canvas>
+    <div id="mapLabel">settore 7806</div>
+  </div>
+
+  <div id="bars">
+    <div class="barRow">
+      <span class="barLabel">ECO</span>
+      <div class="barTrack"><div id="batBar" class="barFill"></div></div>
+    </div>
+    <div class="barRow">
+      <span class="barLabel" id="powerLabel">POWER</span>
+      <div class="barTrack"><div id="powerBar" class="barFill"></div></div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+</div>
+
+<!-- Schermata iniziale -->
+<div id="menu">
+  <div class="panel">
+    <h1>E&thinsp;C&thinsp;O</h1>
+    <p class="tag">Non vedi il mondo. Lo ricostruisci a impulsi.</p>
+    <input id="nameInput" maxlength="14" placeholder="il tuo nome" autocomplete="off" spellcheck="false">
+    <div id="skins"></div>
+    <button id="startBtn">START</button>
+    <p class="hint"><b>MOUSE</b> direzione &nbsp;·&nbsp; <b>SPAZIO</b> (tieni premuto) eco &nbsp;·&nbsp; <b>CLICK</b> attacco</p>
+    <p class="hint dim">l’eco rivela il mondo… ma rivela anche te</p>
+  </div>
+</div>
+
+<!-- Schermata morte -->
+<div id="death" class="hidden">
+  <div class="panel red">
+    <h2>SEI SVANITO NEL BUIO</h2>
+    <p id="deathBy"></p>
+    <div id="deathStats"></div>
+    <button id="respawnBtn">RIENTRA</button>
+    <button id="menuBtn" class="ghostBtn">MENU</button>
+  </div>
+</div>
+
+<!-- Controlli touch -->
+<div id="touchui" class="hidden">
+  <div id="btnEco" class="tbtn">ECO</div>
+  <div id="btnAtk" class="tbtn">ATK</div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/world.js"></script>
+<script src="js/echo.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/minimap.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
