@@ -135,7 +135,7 @@ html, body {
 @keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }
 
 /* ===== Overlay menu / morte ===== */
-#menu, #death {
+#death {
   position: fixed; inset: 0; z-index: 10;
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(ellipse at center, rgba(5, 8, 15, 0.55) 0%, rgba(3, 5, 10, 0.88) 100%);
@@ -155,25 +155,57 @@ html, body {
   box-shadow: 0 0 60px rgba(160, 30, 50, 0.22), inset 0 0 40px rgba(50, 10, 18, 0.4);
 }
 
-h1 {
-  font-size: 54px; font-weight: 200; letter-spacing: 22px;
-  margin-left: 22px; /* compensa letter-spacing */
-  color: #fff;
-  text-shadow: 0 0 18px rgba(77, 245, 200, 0.9), 0 0 60px rgba(77, 245, 200, 0.4);
-  margin-bottom: 6px;
+/* ===== Schermata iniziale: nessun riquadro, in piena scena ===== */
+#menu {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 40px;
+  padding: 32px;
+  background: radial-gradient(ellipse at center, #0a1220 0%, #030509 100%);
 }
+
+h1 {
+  font-size: 76px; font-weight: 200; letter-spacing: 30px;
+  margin-left: 30px; /* compensa letter-spacing */
+  color: #fff;
+  text-shadow: 0 0 22px rgba(77, 245, 200, 0.9), 0 0 80px rgba(77, 245, 200, 0.4);
+}
+
+#skinPicker {
+  display: flex; align-items: center; justify-content: center;
+  gap: 30px;
+}
+.arrowBtn {
+  width: 48px; height: 48px; padding: 0;
+  flex: none;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: rgba(200, 240, 255, 0.75);
+  font-size: 18px;
+  box-shadow: none;
+  transition: border-color 0.2s, color 0.2s, transform 0.15s;
+}
+.arrowBtn:hover { border-color: var(--cyan); color: var(--cyan); transform: scale(1.08); box-shadow: 0 0 16px rgba(77, 245, 200, 0.3); }
+.arrowBtn:active { transform: scale(0.95); }
+
+#skinStage { width: 150px; text-align: center; }
+#skinCanvas { width: 150px; height: 150px; display: block; }
+#skinName {
+  margin-top: 6px;
+  font-size: 13px; font-weight: 700; letter-spacing: 5px;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(77, 245, 200, 0.6);
+}
+
+#menu #nameInput { width: min(320px, 80vw); }
+#menu #startBtn { width: min(320px, 80vw); }
 h2 {
   font-size: 22px; font-weight: 700; letter-spacing: 4px;
   color: #ffd9de;
   text-shadow: 0 0 16px rgba(255, 80, 100, 0.8);
   margin-bottom: 10px;
 }
-.tag {
-  font-size: 13px; font-style: italic;
-  color: rgba(170, 225, 250, 0.7);
-  margin-bottom: 24px;
-}
-
 #nameInput {
   width: 100%;
   background: rgba(8, 14, 24, 0.9);
@@ -186,31 +218,6 @@ h2 {
 }
 #nameInput:focus { border-color: var(--cyan); box-shadow: 0 0 14px rgba(77, 245, 200, 0.35); }
 #nameInput::placeholder { color: rgba(140, 190, 220, 0.4); letter-spacing: 1px; }
-
-#skins {
-  display: flex; justify-content: center; gap: 12px;
-  margin: 20px 0 22px;
-}
-.skinCard {
-  cursor: pointer;
-  border: 1px solid rgba(90, 200, 255, 0.15);
-  border-radius: 14px;
-  padding: 8px 6px 6px;
-  background: rgba(8, 14, 24, 0.6);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-}
-.skinCard:hover { transform: translateY(-3px); }
-.skinCard.sel {
-  border-color: var(--cyan);
-  box-shadow: 0 0 18px rgba(77, 245, 200, 0.35);
-}
-.skinCard canvas { width: 68px; height: 68px; display: block; }
-.skinCard .skName {
-  font-size: 9px; font-weight: 700; letter-spacing: 2px;
-  color: rgba(170, 225, 250, 0.7);
-  margin-top: 4px;
-}
-.skinCard.sel .skName { color: var(--cyan); }
 
 button {
   font-family: inherit;
@@ -234,10 +241,6 @@ button.ghostBtn {
   box-shadow: none;
   letter-spacing: 4px; font-size: 13px; padding: 10px;
 }
-
-.hint { margin-top: 18px; font-size: 11.5px; letter-spacing: 1px; color: rgba(160, 220, 255, 0.55); }
-.hint b { color: rgba(200, 240, 255, 0.85); }
-.hint.dim { margin-top: 6px; font-style: italic; color: rgba(160, 220, 255, 0.32); }
 
 #deathBy { font-size: 14px; color: rgba(255, 200, 210, 0.8); margin-bottom: 16px; }
 #deathStats {
@@ -272,5 +275,9 @@ button.ghostBtn {
   #leaderboard { display: none; }
   #minimap { width: 120px; height: 120px; }
   #bars { width: 200px; bottom: 110px; }
+  #menu { gap: 28px; }
   h1 { font-size: 40px; letter-spacing: 14px; margin-left: 14px; }
+  #skinPicker { gap: 16px; }
+  #skinStage, #skinCanvas { width: 110px; }
+  #skinCanvas { height: 110px; }
 }

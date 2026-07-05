@@ -5,7 +5,7 @@ const UI = (() => {
   let selSkin = 0;
   let lbTimer = 0;
   let els = {};
-  let skinCtxs = [];
+  let skinCtx = null;
 
   function init() {
     els = {
@@ -13,7 +13,10 @@ const UI = (() => {
       death: document.getElementById('death'),
       hud: document.getElementById('hud'),
       name: document.getElementById('nameInput'),
-      skins: document.getElementById('skins'),
+      skinCanvas: document.getElementById('skinCanvas'),
+      skinName: document.getElementById('skinName'),
+      skinPrev: document.getElementById('skinPrev'),
+      skinNext: document.getElementById('skinNext'),
       start: document.getElementById('startBtn'),
       kills: document.getElementById('kills'),
       lb: document.getElementById('lb'),
@@ -28,24 +31,19 @@ const UI = (() => {
       touchui: document.getElementById('touchui'),
     };
 
-    // card delle skin
-    SKINS.forEach((sk, i) => {
-      const card = document.createElement('div');
-      card.className = 'skinCard' + (i === selSkin ? ' sel' : '');
-      const cv = document.createElement('canvas');
-      cv.width = cv.height = 68;
-      const nm = document.createElement('div');
-      nm.className = 'skName';
-      nm.textContent = sk.name;
-      card.appendChild(cv);
-      card.appendChild(nm);
-      card.addEventListener('click', () => {
-        selSkin = i;
-        AudioSys.init(); AudioSys.resume(); AudioSys.uiClick();
-        [...els.skins.children].forEach((c, j) => c.classList.toggle('sel', j === selSkin));
-      });
-      els.skins.appendChild(card);
-      skinCtxs.push(cv.getContext('2d'));
+    skinCtx = els.skinCanvas.getContext('2d');
+    const setSkin = i => {
+      selSkin = (i + SKINS.length) % SKINS.length;
+      els.skinName.textContent = SKINS[selSkin].name;
+      AudioSys.init(); AudioSys.resume(); AudioSys.uiClick();
+    };
+    els.skinPrev.addEventListener('click', () => setSkin(selSkin - 1));
+    els.skinNext.addEventListener('click', () => setSkin(selSkin + 1));
+    els.skinName.textContent = SKINS[selSkin].name;
+    window.addEventListener('keydown', e => {
+      if (Game.state !== 'menu' || document.activeElement === els.name) return;
+      if (e.key === 'ArrowLeft') setSkin(selSkin - 1);
+      else if (e.key === 'ArrowRight') setSkin(selSkin + 1);
     });
 
     els.start.addEventListener('click', () => startGame());
@@ -69,7 +67,7 @@ const UI = (() => {
     const savedSkin = parseInt(localStorage.getItem('eco_skin'), 10);
     if (savedSkin >= 0 && savedSkin < SKINS.length) {
       selSkin = savedSkin;
-      [...els.skins.children].forEach((c, j) => c.classList.toggle('sel', j === selSkin));
+      els.skinName.textContent = SKINS[selSkin].name;
     }
 
     if ('ontouchstart' in window) els.touchui.classList.remove('hidden');
@@ -108,15 +106,14 @@ const UI = (() => {
   function update(dt) {
     const me = Game.player;
 
-    // anteprime skin animate nel menu
+    // anteprima animata dello skin selezionato
     if (Game.state === 'menu' && !els.menu.classList.contains('hidden')) {
-      skinCtxs.forEach((c, i) => {
-        c.clearRect(0, 0, 68, 68);
-        c.save();
-        c.translate(34, 36);
-        Renderer.drawBlobShape(c, SKINS[i], 19, Game.now + i * 1.7, i * 13, 1);
-        c.restore();
-      });
+      const c = skinCtx, S = els.skinCanvas.width;
+      c.clearRect(0, 0, S, S);
+      c.save();
+      c.translate(S / 2, S / 2 + 4);
+      Renderer.drawBlobShape(c, SKINS[selSkin], S * 0.29, Game.now, selSkin * 13, 1);
+      c.restore();
     }
 
     if (!me) return;

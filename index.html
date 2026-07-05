@@ -40,15 +40,17 @@
 
 <!-- Schermata iniziale -->
 <div id="menu">
-  <div class="panel">
-    <h1>E&thinsp;C&thinsp;O</h1>
-    <p class="tag">Non vedi il mondo. Lo ricostruisci a impulsi.</p>
-    <input id="nameInput" maxlength="14" placeholder="il tuo nome" autocomplete="off" spellcheck="false">
-    <div id="skins"></div>
-    <button id="startBtn">START</button>
-    <p class="hint"><b>MOUSE</b> direzione &nbsp;·&nbsp; <b>SPAZIO</b> (tieni premuto) eco &nbsp;·&nbsp; <b>CLICK</b> attacco</p>
-    <p class="hint dim">l’eco rivela il mondo… ma rivela anche te</p>
+  <h1>E&thinsp;C&thinsp;O</h1>
+  <div id="skinPicker">
+    <button id="skinPrev" class="arrowBtn" aria-label="precedente">&#10094;</button>
+    <div id="skinStage">
+      <canvas id="skinCanvas" width="150" height="150"></canvas>
+      <div id="skinName"></div>
+    </div>
+    <button id="skinNext" class="arrowBtn" aria-label="successivo">&#10095;</button>
   </div>
+  <input id="nameInput" maxlength="14" placeholder="il tuo nome" autocomplete="off" spellcheck="false">
+  <button id="startBtn">START</button>
 </div>
 
 <!-- Schermata morte -->
